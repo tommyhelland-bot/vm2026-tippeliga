@@ -1519,10 +1519,12 @@ async function refreshCompData(){
 }
 // Build leaderboard array sorted desc
 function buildLeaderboard(){
+  // comp.actual is stored in *serialized* form; convert to a state object once.
+  const actualState = comp.actual ? deserializeInto(blankState(), comp.actual) : null;
   const rows = Object.keys(comp.participants).map(nm=>{
     const rec = comp.participants[nm];
     const ps = deserializeInto(blankState(), rec.data);
-    const sc = scorePrediction(ps, comp.actual);
+    const sc = scorePrediction(ps, actualState);
     return { name:nm, total:sc.total, bd:sc.breakdown, savedAt:rec.savedAt };
   });
   rows.sort((a,b)=> b.total-a.total || a.name.localeCompare(b.name));
