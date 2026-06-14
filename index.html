@@ -1489,18 +1489,20 @@ async function storageSaveActual(data){
 async function storageLoadActual(){
   if(!STORE_OK) return null;
   try{
-    const { data, error } = await _sb.from("config").select("value").eq("id","actual").maybeSingle();
-    if(error) throw error;
-    return data && data.value ? data.value.data : null;
-  }catch(e){ return null; }
+    const { data, error } = await _sb.from("config").select("value").eq("id","actual").limit(1);
+    if(error){ console.error("storageLoadActual error:", error); return null; }
+    const row = (data && data.length) ? data[0] : null;
+    return row && row.value ? row.value.data : null;
+  }catch(e){ console.error("storageLoadActual exception:", e); return null; }
 }
 async function storageGetAdminKey(){
   if(!STORE_OK) return null;
   try{
-    const { data, error } = await _sb.from("config").select("value").eq("id","adminkey").maybeSingle();
-    if(error) throw error;
-    return data && data.value ? data.value.key : null;
-  }catch(e){ return null; }
+    const { data, error } = await _sb.from("config").select("value").eq("id","adminkey").limit(1);
+    if(error){ console.error("storageGetAdminKey error:", error); return null; }
+    const row = (data && data.length) ? data[0] : null;
+    return row && row.value ? row.value.key : null;
+  }catch(e){ console.error("storageGetAdminKey exception:", e); return null; }
 }
 async function storageSetAdminKey(key){
   if(!STORE_OK) throw new Error("nostore");
