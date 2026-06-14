@@ -1652,7 +1652,8 @@ async function renderBoard(){
   // Leaderboard
   const rows=buildLeaderboard();
   html+='<div class="leaderboard"><div class="lb-head"><h2>🏆 Resultattavle</h2>'+
-    '<span class="lock-pill '+(locked?'is-locked':'is-open')+'">'+(locked?'Låst':'Åpen for endringer')+'</span></div>';
+    '<div style="display:flex;gap:8px;align-items:center"><button class="tool" id="refreshBoardBtn" style="padding:6px 12px">↻ Oppdater</button>'+
+    '<span class="lock-pill '+(locked?'is-locked':'is-open')+'">'+(locked?'Låst':'Åpen for endringer')+'</span></div></div>';
   if(rows.length===0){
     html+='<div class="lb-empty">Ingen tipp lagret enn\u00e5. Bli med og v\u00e6r f\u00f8rst ut!</div>';
   } else {
@@ -1706,6 +1707,8 @@ async function renderBoard(){
   if(bs) bs.addEventListener("click", saveMyPrediction);
   const sa=document.getElementById("saveActualBtn");
   if(sa) sa.addEventListener("click", saveActualResults);
+  const rb=document.getElementById("refreshBoardBtn");
+  if(rb) rb.addEventListener("click", async()=>{ rb.textContent="↻ Oppdaterer…"; await refreshCompData(); renderBoard(); });
 }
 
 async function saveMyPrediction(){
@@ -1714,8 +1717,12 @@ async function saveMyPrediction(){
   const msg=document.getElementById("boardMsg");
   try{
     await storageSavePrediction(comp.name, serializeState());
-    if(msg) msg.textContent="✓ Tippet ditt er lagret "+new Date().toLocaleTimeString("no-NO",{hour:"2-digit",minute:"2-digit"});
     await refreshCompData();
+    const onBoard=document.getElementById("panel-board").classList.contains("active");
+    if(onBoard) renderBoard();
+    const m2=document.getElementById("boardMsg");
+    const t="✓ Tippet ditt er lagret "+new Date().toLocaleTimeString("no-NO",{hour:"2-digit",minute:"2-digit"});
+    if(m2) m2.textContent=t; else if(msg) msg.textContent=t;
   }catch(e){
     if(msg) msg.textContent="Kunne ikke lagre til delt lager. (Lagret kun lokalt i denne \u00f8kten.)";
   }
@@ -1725,8 +1732,12 @@ async function saveActualResults(){
   const msg=document.getElementById("boardMsg");
   try{
     await storageSaveActual(serializeState());
-    if(msg) msg.textContent="✓ Fasit lagret. Tavlen er oppdatert.";
     await refreshCompData();
+    // recompute & redraw the leaderboard so new points show immediately
+    renderBoard();
+    const m2=document.getElementById("boardMsg");
+    if(m2) m2.textContent="✓ Fasit lagret "+new Date().toLocaleTimeString("no-NO",{hour:"2-digit",minute:"2-digit"})+". Tavlen er oppdatert.";
+    else if(msg) msg.textContent="✓ Fasit lagret. Tavlen er oppdatert.";
   }catch(e){
     if(msg) msg.textContent="Kunne ikke lagre fasit til delt lager.";
   }
