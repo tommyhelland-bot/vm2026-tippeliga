@@ -157,8 +157,13 @@
   .b-3{background:rgba(244,180,26,.2);color:var(--gold2)}
   .b-out{background:rgba(122,131,149,.16);color:#aab3c3}
 
-  .fairplay-row{display:flex;align-items:center;gap:6px;justify-content:flex-end;padding:4px 10px 0;font-size:11px;color:#8c99ad}
-  .fp-input{width:46px;height:26px;text-align:center;border-radius:6px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--paper);font-size:12px}
+  .fairplay-row{padding:8px 10px 2px}
+  .fp-title{font-size:11px;color:#8c99ad;margin-bottom:6px}
+  .fp-fields{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+  .fp-cell{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}
+  .fp-lab{display:flex;align-items:center;gap:4px;font-size:9.5px;color:#9aa6b8;max-width:100%;line-height:1.1}
+  .fp-lab span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .fp-input{width:100%;max-width:54px;height:28px;text-align:center;border-radius:6px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--paper);font-size:13px}
 
   /* THIRD PLACE TABLE */
   .third-wrap{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:24px}
@@ -838,9 +843,20 @@ const comp = {
 function nowLocked(){ return Date.now() >= LOCK_UTC; }
 let __joinHelpDismissed=false;
 // Editing the form is allowed if: admin (always, to enter actual results), OR not locked.
-function editingAllowed(){ return comp.isAdmin || !nowLocked(); }
+function editingAllowed(){
+  if(comp.isAdmin) return true;            // admin always edits the fasit
+  if(!comp.name) return false;             // not logged in: viewing live fasit, read-only
+  return !nowLocked();                     // logged-in player: until lock
+}
 let __lockToastShown=0;
-function lockToast(){ const t=Date.now(); if(t-__lockToastShown<2000) return; __lockToastShown=t; alert("Tippingen er l\u00e5st (fra 11. juni kl. 20:59). Du kan ikke lenger endre tippet."); }
+function lockToast(){
+  const t=Date.now(); if(t-__lockToastShown<2000) return; __lockToastShown=t;
+  if(!comp.name && !comp.isAdmin){
+    alert("Du ser den live stillingen (fasit). Logg inn med navnet ditt under \u00ab🏆 Resultattavle\u00bb for \u00e5 fylle ut ditt eget tipp.");
+  } else {
+    alert("Tippingen er l\u00e5st (fra 11. juni kl. 20:59). Du kan ikke lenger endre tippet.");
+  }
+}
 function lockCountdownText(){
   const ms = LOCK_UTC - Date.now();
   if(ms<=0) return "Tippingen er l\u00e5st";
@@ -1086,16 +1102,24 @@ function renderGroups(){
     });
     card.appendChild(matches);
 
-    // fair play inputs (compact)
+    // fair play inputs (compact) — each field labelled with its team to avoid mistakes
     const fpWrap=el("div","fairplay-row");
-    fpWrap.appendChild(el("span",null,"Fair play (prikker):"));
+    fpWrap.appendChild(el("div","fp-title","Fair play (prikker):"));
+    const fpFields=el("div","fp-fields");
     GROUPS[L].forEach((nm,ti)=>{
+      const cell=el("div","fp-cell");
+      const lab=el("div","fp-lab");
+      lab.innerHTML=flagImg(nm,12)+'<span>'+escHtml(nm)+'</span>';
+      lab.title=nm;
       const inp=el("input","fp-input");
       inp.type="number";inp.min=0;inp.value=state.fp[L][ti]||0;
       inp.title=nm+" – fair play-prikker (lavere er bedre)";
       inp.addEventListener("input",()=>{if(!editingAllowed()){inp.value=state.fp[L][ti]||0;lockToast();return;}state.fp[L][ti]=parseInt(inp.value)||0;renderStandings(L);renderThird();renderBracket();});
-      fpWrap.appendChild(inp);
+      cell.appendChild(lab);
+      cell.appendChild(inp);
+      fpFields.appendChild(cell);
     });
+    fpWrap.appendChild(fpFields);
     card.appendChild(fpWrap);
 
     const stWrap=el("div");stWrap.id="stand-"+L;stWrap.style.padding="6px 12px 14px";
@@ -1582,7 +1606,7 @@ function renderCompBar(){
   // identity
   if(comp.isAdmin){ who.innerHTML='Arrangør-modus (fasit)'; }
   else if(comp.name){ who.innerHTML='Spiller: <span class="nm">'+escHtml(comp.name)+'</span>'; }
-  else { who.textContent='Ikke p\u00e5logget'; }
+  else { who.innerHTML='Live stilling <span style="color:#8c99ad;font-weight:500">(ikke innlogget)</span>'; }
   // lock line
   if(locked){ lock.className="cb-lock locked"; lock.textContent="🔒 Tippingen er l\u00e5st (startet 11. juni)"; }
   else {
@@ -1598,7 +1622,7 @@ function renderCompBar(){
     actions.appendChild(b);
   } else {
     const b=el("button","tool",null); b.textContent="Bytt navn / logg ut";
-    b.addEventListener("click",()=>{ comp.name=null; comp.isAdmin=false; renderCompBar(); switchTab("board"); });
+    b.addEventListener("click",()=>{ comp.name=null; comp.isAdmin=false; saveIdentity(); loadDefaultView(); renderAll(); switchTab("board"); });
     actions.appendChild(b);
   }
   // lock down inputs visually
@@ -1692,6 +1716,7 @@ async function renderBoard(){
     // load existing prediction if any
     await refreshCompData();
     if(comp.participants[nm]){ deserializeInto(state, comp.participants[nm].data); }
+    saveIdentity();
     renderAll(); switchTab("groups");
   });
   const ab=document.getElementById("adminBtn");
@@ -1705,6 +1730,7 @@ async function renderBoard(){
     // load existing actual into the editor
     const a=await storageLoadActual();
     if(a) deserializeInto(state,a); else clearAllSilent();
+    saveIdentity();
     renderAll(); switchTab("groups");
   });
   const bs=document.getElementById("boardSaveBtn");
@@ -1782,12 +1808,43 @@ document.getElementById("btnTie").addEventListener("click",()=>{
 });
 
 /* ===================== INIT ===================== */
+/* ===================== HUSK IDENTITET (localStorage) ===================== */
+const IDKEY="vm2026_identity";
+function saveIdentity(){
+  try{
+    if(comp.isAdmin) localStorage.setItem(IDKEY, JSON.stringify({admin:true}));
+    else if(comp.name) localStorage.setItem(IDKEY, JSON.stringify({name:comp.name}));
+    else localStorage.removeItem(IDKEY);
+  }catch(e){}
+}
+function loadIdentity(){
+  try{ const r=localStorage.getItem(IDKEY); return r?JSON.parse(r):null; }catch(e){ return null; }
+}
+// Load the appropriate view into `state`: own prediction (player), or fasit (admin / not logged in)
+function loadDefaultView(){
+  if(comp.name && comp.participants[comp.name]){
+    deserializeInto(state, comp.participants[comp.name].data);
+  } else if(comp.actual){
+    // show the live fasit (admin edits it; visitors just follow along)
+    deserializeInto(state, comp.actual);
+  } else {
+    clearAllSilent();
+  }
+}
+
 (async function init(){
   renderAll();
-  // tick the lock countdown every 30s
   setInterval(renderCompBar, 30000);
-  // preload competition data so the board is ready
   if(STORE_OK){ try{ await refreshCompData(); }catch(e){} }
+  // restore remembered identity
+  const id=loadIdentity();
+  if(id){
+    if(id.admin){ comp.isAdmin=true; comp.name=null; }
+    else if(id.name){ comp.name=id.name; comp.isAdmin=false; }
+  }
+  // pick the right thing to show
+  loadDefaultView();
+  renderAll();
   renderCompBar();
 })();
 </script>
