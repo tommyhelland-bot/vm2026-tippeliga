@@ -330,7 +330,7 @@
   <section class="panel" id="panel-third">
     <div class="third-wrap">
       <h2>Rangering av tredjeplasser</h2>
-      <p class="muted">Alle 12 gruppetreere rangeres samlet. De <b>8 beste</b> går videre til 32-delsfinalen; de 4 nederste er ute. Rangering: poeng → målforskjell → scorede mål → fair play (færre prikker er bedre).</p>
+      <p class="muted">Alle 12 gruppetreere rangeres samlet. De <b>8 beste</b> går videre til sekstendelsfinalen; de 4 nederste er ute. Rangering: poeng → målforskjell → scorede mål → fair play (færre prikker er bedre).</p>
       <table class="third" id="thirdTable"></table>
     </div>
     <div class="note" id="thirdScenario"></div>
@@ -338,7 +338,7 @@
 
   <section class="panel" id="panel-bracket">
     <div class="section-h" style="font-family:'Anton';font-size:24px;text-transform:uppercase;color:#fff">Utslagsrundene</div>
-    <p class="muted">32-delsfinalen settes automatisk når gruppespillet er ferdig (FIFAs faste oppsett + tredjeplass-matrisen). Fyll inn resultater for å avgjøre videre. Uavgjort? Skriv inn straffer.</p>
+    <p class="muted">Sekstendelsfinalen settes automatisk når gruppespillet er ferdig (FIFAs faste oppsett + tredjeplass-matrisen). Fyll inn resultater for å avgjøre videre. Uavgjort? Skriv inn straffer.</p>
     <div class="legend">
       <span><i class="dot" style="background:var(--win)"></i> Gruppevinner</span>
       <span><i class="dot" style="background:var(--ru)"></i> Toer</span>
@@ -357,7 +357,7 @@
 </div>
 
 <footer>
-  Uoffisielt tippeskjema. Gruppeoppsett, kampprogram, FIFA-tiebreakere og 32-delsstrukturen følger turneringsreglementet for VM 2026.
+  Uoffisielt tippeskjema. Gruppeoppsett, kampprogram, FIFA-tiebreakere og sekstendelsfinale-strukturen følger turneringsreglementet for VM 2026.
 </footer>
 
 <script>
@@ -497,8 +497,8 @@ const ALLOWED = {
 /* Bracket progression R16 -> QF -> SF -> Final.
    Source: FIFA match schedule for 2026. Winner of match X feeds these. */
 const R16 = {
-  89:[74,77], 90:[73,75], 91:[76,78], 92:[80,82],
-  93:[81,83], 94:[79,84], 95:[86,88], 96:[85,87]
+  89:[74,77], 90:[73,75], 91:[76,78], 92:[79,80],
+  93:[83,84], 94:[81,82], 95:[86,88], 96:[85,87]
 };
 const QF = { 97:[89,90], 98:[93,94], 99:[91,92], 100:[95,96] };
 const SF = { 101:[97,98], 102:[99,100] };
@@ -1226,7 +1226,7 @@ function renderThird(){
 
   const sc=document.getElementById("thirdScenario");
   if(!allDone){
-    sc.innerHTML="<b>Fullfør alle 12 gruppene</b> for å låse de 8 beste tredjeplassene og sette opp 32-delsfinalen.";
+    sc.innerHTML="<b>Fullfør alle 12 gruppene</b> for å låse de 8 beste tredjeplassene og sette opp sekstendelsfinalen.";
   }else{
     const top8=ranking.slice(0,8).map(r=>r.L).sort();
     const key=top8.join("");
@@ -1239,7 +1239,7 @@ function renderThird(){
 }
 
 const ROUND_DEFS = [
-  {title:"32-delsfinale", matches:[73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88]},
+  {title:"Sekstendelsfinale", matches:[73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88]},
   {title:"Åttedelsfinale", matches:[89,90,91,92,93,94,95,96]},
   {title:"Kvartfinale", matches:[97,98,99,100]},
   {title:"Semifinale", matches:[101,102]},
@@ -1253,7 +1253,7 @@ function renderBracket(){
   if(statusEl){
     const incomplete=GLETTERS.filter(L=>!groupComplete(L));
     if(incomplete.length===0){
-      statusEl.innerHTML='<div class="ko-banner ok">Alle grupper er ferdige. De 8 beste tredjeplassene er satt inn i 32-delsfinalen.</div>';
+      statusEl.innerHTML='<div class="ko-banner ok">Alle grupper er ferdige. De 8 beste tredjeplassene er satt inn i sekstendelsfinalen.</div>';
     } else {
       statusEl.innerHTML='<div class="ko-banner warn">De fire tredjeplass-kampene fylles f\u00f8rst n\u00e5r <b>alle 12 gruppene</b> er ferdigspilt, siden treerne rangeres p\u00e5 tvers av gruppene. Mangler resultater i: <b>gruppe '+incomplete.join(", ")+'</b>.</div>';
     }
@@ -1795,6 +1795,7 @@ document.getElementById("btnTie").addEventListener("click",()=>{
 "• Riktig utfall (H/U/B), feil tall: 1 poeng\n"+
 "• Riktig lag videre fra gruppe: 1 poeng per lag\n"+
 "• Riktig vinner av en sluttspillkamp: 2 poeng\n"+
+"  (gjelder alle runder: sekstendelsfinale → finale, ogs\u00e5 bronsefinalen)\n"+
 "• Riktig finalist: 4 poeng (per lag)\n"+
 "• Riktig verdensmester: 8 poeng\n\n"+
 "LÅSING:\n"+
